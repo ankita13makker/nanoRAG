@@ -30,9 +30,8 @@ from .constants import OUTPUT_DIR, KNOWLEDGE_DIR as DEFAULT_KNOWLEDGE_DIR, ARTIF
 from .extractors import extract_text, is_supported
 from .scorer import build_index, build_memory_md, enrich_text, generate_topic_metadata
 
-MAX_FILE_SIZE_BYTES = 100 * 1024 * 1024  # 100 MB per file
-MAX_LIBRARY_SIZE_BYTES = 150 * 1024 * 1024  # 150 MB per library
-MAX_FILE_COUNT = 1000
+MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024  # 10 MB per file
+MAX_FILE_COUNT = 25
 
 
 def _sha256(path: Path) -> str:
@@ -61,7 +60,6 @@ def _save_manifest(out_dir: Path, manifest: dict) -> None:
 def scan_files(directory: Path) -> list[Path]:
     """Scan for supported files, enforcing per-file and per-library limits."""
     files = []
-    total_size = 0
     for f in sorted(directory.rglob("*")):
         if not f.is_file() or not is_supported(f):
             continue
@@ -69,14 +67,10 @@ def scan_files(directory: Path) -> list[Path]:
         if size > MAX_FILE_SIZE_BYTES:
             logger.warning("Skipping %s (%.1f MB exceeds limit)", f.name, size / 1024 / 1024)
             continue
-        if total_size + size > MAX_LIBRARY_SIZE_BYTES:
-            logger.warning("Library size limit reached (150 MB). Skipping remaining files.")
-            break
         if len(files) >= MAX_FILE_COUNT:
             logger.warning("File count limit reached (%d). Skipping remaining files.", MAX_FILE_COUNT)
             break
         files.append(f)
-        total_size += size
     return files
 
 

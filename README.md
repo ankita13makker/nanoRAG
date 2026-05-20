@@ -152,9 +152,8 @@ The same tokenizer runs in Python (build time) and Apex (query time), ensuring s
 
 | Limit | Value |
 |-------|-------|
-| Max file size | 100 MB |
-| Max library size | 150 MB |
-| Max files per library | 1,000 |
+| Max file size | 10 MB |
+| Max files per library | 25 |
 | Per-document char cap (runtime) | 100,000 |
 | Top-K results returned | 2 (configurable in Apex) |
 
