@@ -8,6 +8,9 @@ Each library has:
   - manifest.json — file inventory with hashes, tracks add/update/remove
   - memory.md    — per-file summary (sections, topics, tags, related files) for agent fallback
   - bm25.json    — keyword index over full document content (one entry per file)
+
+The memory.md "compiled knowledge" concept is motivated by:
+https://gist.github.com/karpathy/442a6bf555914893e9891c11519de94f
 """
 
 from __future__ import annotations

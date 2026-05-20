@@ -11,6 +11,9 @@ Delimiter hierarchy:
   4. Words (whitespace)
 
 Config: 300-word chunks with 50-word sentence-aware overlap.
+
+Motivated by the recursive chunking strategy described in:
+https://github.com/garrytan/gbrain/blob/master/docs/architecture/infra-layer.md
 """
 
 from __future__ import annotations
