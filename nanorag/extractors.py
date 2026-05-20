@@ -1,4 +1,4 @@
-# Copyright (c) 2024, Salesforce, Inc.
+# Copyright (c) 2026, Salesforce, Inc.
 # SPDX-License-Identifier: Apache-2.0
 
 """Text extraction from common file formats: PDF, DOCX, PPTX, XLSX, RTF, EPUB, etc."""
