@@ -1,0 +1,41 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+dist/
+build/
+.eggs/
+*.egg
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# nanoRag build output (created by `sf nanorag build`)
+output/
+knowledge/
+
+# Node/Plugin
+node_modules/
+plugins/sf-nanorag/lib/
+plugins/sf-nanorag/.venv/
+plugins/sf-nanorag/oclif.manifest.json
+plugins/sf-nanorag/package-lock.json
+
+# Secrets (should never be committed)
+.env
+*.key
+*.pem
+credentials.json

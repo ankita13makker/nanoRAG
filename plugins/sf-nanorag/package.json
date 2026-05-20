@@ -1,0 +1,51 @@
+{
+  "name": "@salesforce/plugin-nanorag",
+  "version": "0.1.0",
+  "description": "SF CLI plugin for managing nanoRag knowledge libraries",
+  "main": "lib/index.js",
+  "types": "lib/index.d.ts",
+  "type": "module",
+  "license": "Apache-2.0",
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "scripts": {
+    "build": "tsc -p . && node bin/generate-manifest.js",
+    "postinstall": "node bin/postinstall.js",
+    "clean": "rm -rf lib"
+  },
+  "dependencies": {
+    "@oclif/core": "^4",
+    "@salesforce/core": "^8",
+    "@salesforce/sf-plugins-core": "^12"
+  },
+  "devDependencies": {
+    "@types/node": "^22",
+    "typescript": "^5.4"
+  },
+  "oclif": {
+    "commands": "./lib/commands",
+    "bin": "sf",
+    "topicSeparator": " ",
+    "topics": {
+      "nanorag": {
+        "description": "Manage nanoRag knowledge libraries"
+      },
+      "nanorag.library": {
+        "description": "Manage nanoRag libraries"
+      },
+      "nanorag.file": {
+        "description": "Manage files in nanoRag libraries"
+      },
+      "nanorag.skill": {
+        "description": "Manage nanoRag Claude Code skill"
+      }
+    }
+  },
+  "files": [
+    "/lib",
+    "/bin",
+    "/oclif.manifest.json",
+    "/messages"
+  ]
+}
