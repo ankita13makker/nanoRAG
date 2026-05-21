@@ -173,7 +173,7 @@ def render_library_topic_afscript(
     action_block = (
         f"    actions:\n"
         f"        search_{topic_id}:\n"
-        f'            target: "apex://NanoRAGQueryService"\n'
+        f'            target: "apex://NanoRagQueryService"\n'
         f'            description: "Search the knowledge library for relevant documents"\n'
         f"            inputs:\n"
         f"                userQuery: string\n"
