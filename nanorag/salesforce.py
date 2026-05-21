@@ -345,7 +345,11 @@ def upload_nanorag(output_dir: Path, knowledge_dir: Path, label: str) -> dict:
     for artifact in ARTIFACTS:
         artifact_path = output_dir / artifact
         if artifact_path.exists():
-            title = f"{prefix}/{artifact}"
+            # Apex runtime expects the BM25 index under /index/ subpath.
+            if artifact == "bm25.json":
+                title = f"{prefix}/index/{artifact}"
+            else:
+                title = f"{prefix}/{artifact}"
             _delete_existing_by_title(title)
             ext = artifact_path.suffix.lstrip(".")
             content = artifact_path.read_text(encoding="utf-8")
