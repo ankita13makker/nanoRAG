@@ -39,6 +39,7 @@ from .sf_files import (
     resolve_user_id_by_username,
     fetch_content_version_data,
     upload_content_version,
+    delete_content_documents_by_title_prefix,
 )
 from .metadata_gen import (
     inject_library_topic_afscript,
@@ -287,10 +288,12 @@ def _upload_manifest(
     Returns a failure dict on error, None on success.
     """
     manifest_yaml = manifest_mod.dump_manifest(manifest)
+    manifest_title = f"nanorag/{library_name}/manifest.json"
     try:
+        delete_content_documents_by_title_prefix(sf, manifest_title)
         upload_content_version(
             sf=sf,
-            title=f"nanorag/{library_name}/manifest.json",
+            title=manifest_title,
             data=manifest_yaml.encode("utf-8"),
             path_on_client="manifest.json",
         )

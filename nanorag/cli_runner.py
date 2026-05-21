@@ -291,9 +291,9 @@ def _handle_file_add(args: Dict) -> Dict:
 
     import json as _json
     # Delete old index/memory and re-upload
-    delete_content_documents_by_title_prefix(sf, f"nanorag/{library_name}/bm25.json")
+    delete_content_documents_by_title_prefix(sf, f"nanorag/{library_name}/index/bm25.json")
     delete_content_documents_by_title_prefix(sf, f"nanorag/{library_name}/memory.md")
-    upload_content_version(sf=sf, title=f"nanorag/{library_name}/bm25.json",
+    upload_content_version(sf=sf, title=f"nanorag/{library_name}/index/bm25.json",
                           data=_json.dumps(index).encode("utf-8"), path_on_client="bm25.json")
     upload_content_version(sf=sf, title=f"nanorag/{library_name}/memory.md",
                           data=memory.encode("utf-8"), path_on_client="memory.md")
@@ -374,14 +374,14 @@ def _handle_file_delete(args: Dict) -> Dict:
 
     import json as _json
     # Delete old index/memory and re-upload from remaining corpus
-    delete_content_documents_by_title_prefix(sf, f"nanorag/{library_name}/bm25.json")
+    delete_content_documents_by_title_prefix(sf, f"nanorag/{library_name}/index/bm25.json")
     delete_content_documents_by_title_prefix(sf, f"nanorag/{library_name}/memory.md")
 
     if corpus:
         enriched_corpus = [(src, enrich_text(text, title=src)) for src, text in corpus]
         index = build_index(enriched_corpus)
         memory = build_memory_md(corpus)
-        upload_content_version(sf=sf, title=f"nanorag/{library_name}/bm25.json",
+        upload_content_version(sf=sf, title=f"nanorag/{library_name}/index/bm25.json",
                               data=_json.dumps(index).encode("utf-8"), path_on_client="bm25.json")
         upload_content_version(sf=sf, title=f"nanorag/{library_name}/memory.md",
                               data=memory.encode("utf-8"), path_on_client="memory.md")
@@ -482,7 +482,7 @@ def _handle_search(args: Dict) -> Dict:
     sf = _get_sf_client()
 
     # Load bm25.json from org
-    index_title = f"nanorag/{library_name}/bm25.json"
+    index_title = f"nanorag/{library_name}/index/bm25.json"
     rows = query_content_versions_by_title_prefix(sf=sf, prefix=index_title, limit=1, newest_first=True)
     if not rows:
         return _error("index_not_found", f"No bm25.json found for library '{library_name}'")
