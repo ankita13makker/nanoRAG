@@ -2,7 +2,9 @@
 
 Lightweight BM25 knowledge retrieval for Salesforce Agentforce agents.
 
-Give any Agentforce agent the ability to search and answer from your documents — PDFs, DOCX, PPTX, XLSX, TXT, and 30+ other formats. No external vector database. No API keys. Everything runs locally and stores in your Salesforce org.
+Give any **NextGen Agentforce agent** the ability to search and answer from your documents — PDFs, DOCX, PPTX, XLSX, TXT, and 30+ other formats. No external vector database. No API keys. Everything runs locally and stores in your Salesforce org.
+
+> **Agent compatibility:** nanoRAG attaches to **NextGen (AgentScript) agents** only — the new Agentforce agent format authored via the NextGen Authoring API. Legacy `BotDefinition` agents are detected and a helpful upgrade message is shown.
 
 ## How It Works
 
@@ -15,7 +17,7 @@ Your Documents → Extract Text → Build BM25 Index → Upload to Org → Agent
 2. **Index** — Builds a BM25 keyword index (no embeddings, no GPU)
 3. **Store** — Uploads everything to Salesforce Files (ContentVersion)
 4. **Query** — Deployed Apex class scores queries against the index at runtime
-5. **Attach** — Injects a search topic into the agent's AgentScript via NextGen Authoring API
+5. **Wire into the agent** — Auto-updates the agent's AgentScript with a dedicated subagent and search action via the NextGen Authoring API. Topic name, routing description, and instructions are LLM-generated. Files are shared with the agent's runtime user and the `NanoRag_User` permission set is assigned automatically. **No manual `.agent` file editing required.**
 
 ## Quick Start
 
@@ -24,14 +26,15 @@ Your Documents → Extract Text → Build BM25 Index → Upload to Org → Agent
 - [Salesforce CLI](https://developer.salesforce.com/tools/salesforcecli) (`sf`) installed
 - Python 3.10+ on PATH
 - A Salesforce org with Agentforce enabled
+- A **NextGen (AgentScript) agent** in the org — created via Setup → Agents (the new authoring experience). Legacy `BotDefinition` agents are not supported.
 - An authenticated org: `sf org login web --alias myOrg`
 
 ### Install
 
 ```bash
 # Clone the repo
-git clone https://github.com/salesforce/nanorag.git
-cd nanorag
+git clone https://github.com/ankita13makker/nanoRAG.git
+cd nanoRAG
 
 # Link the SF CLI plugin (creates venv + installs Python deps automatically)
 sf plugins link plugins/sf-nanorag
@@ -53,6 +56,21 @@ sf nanorag attach --target-org myOrg --library-name product_docs \
 ```
 
 Done. Your agent can now answer questions from those documents.
+
+### What `attach` actually does
+
+`sf nanorag attach` doesn't just associate metadata — it **updates the agent's AgentScript** so the runtime can route knowledge questions to the BM25 search. Each attach call:
+
+1. **Creates a new draft version** of the agent via the NextGen Authoring API
+2. **Injects a dedicated subagent block** named `nanorag_<topic>` into the AgentScript with LLM-generated routing instructions
+3. **Adds an action** (`search_<topic>`) that calls the deployed `NanoRagQueryService` Apex class with `userQuery` and `libraryName` inputs
+4. **Wires a router transition** so the orchestrator escalates relevant queries to the new subagent
+5. **Shares all library files** (`raw/`, `extracted/`, `index/bm25.json`, `manifest.json`, `memory.md`) with the agent's `default_agent_user`
+6. **Assigns the `NanoRag_User` permission set** to that user so the deployed Apex can read the index at query time
+
+After attach, you can test in the agent preview — your agent will route questions like "what's covered in the cancer policy?" to the new subagent, which calls Apex, which scores the query against the BM25 index and returns the top-K matching documents' text.
+
+`sf nanorag detach` cleanly removes the topic block, action, and router transition from the AgentScript while leaving the library files intact for re-attach.
 
 ## All Commands
 
