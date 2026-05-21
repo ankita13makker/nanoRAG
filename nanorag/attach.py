@@ -756,17 +756,13 @@ def _share_library_files_with_agent(
         # Collect active ContentDocumentIds
         active_doc_ids: set = set()
 
-        # Doc files from manifest
-        for doc in manifest.get("documents") or []:
-            cdid = doc.get("content_document_id")
-            if cdid:
-                active_doc_ids.add(cdid)
-
-        # Manifest ContentDocument
-        if manifest_document_id:
-            active_doc_ids.add(manifest_document_id)
-
-        # All library files (raw, extracted, index, memory, manifest)
+        # Authoritative source: query the org for current library files.
+        # query_content_versions_by_title_prefix filters out soft-deleted
+        # ContentDocuments (recycle-bin entries from prior dedupe cycles),
+        # so we don't pick up stale IDs that would 422 in the share loop.
+        # NOTE: We intentionally do NOT seed from manifest['documents'] or
+        # the caller's manifest_document_id — those can hold IDs of CDs
+        # that were just deleted-and-replaced as part of this attach call.
         try:
             all_rows = query_content_versions_by_title_prefix(
                 sf=sf,
