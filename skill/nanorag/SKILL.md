@@ -42,7 +42,7 @@ If the user doesn't provide these, ASK before proceeding:
    curl -s -H "Authorization: Bearer $TOKEN" \
      "$INSTANCE_URL/services/data/v66.0/connect/nextgen-authoring/projects"
    ```
-   Look for the `apiName` field (project IDs are prefixed `1bY`). Or ask the user to check Setup > Agents in the org.
+   Look for the `apiName` field on each returned project. Or ask the user to check Setup > Agents in the org.
 
    **Do NOT** query `BotDefinition` via SOQL — that returns only legacy Bot agents, not NextGen authoring projects. nanoRag only attaches to NextGen agents.
 3. **Target org** — confirm `sf config get target-org --json` is set; if not, ask user to run `sf config set target-org <alias>`
