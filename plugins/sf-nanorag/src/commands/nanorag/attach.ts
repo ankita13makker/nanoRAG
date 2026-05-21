@@ -32,6 +32,25 @@ export default class NanoragAttach extends SfCommand<PythonResult['result']> {
     );
 
     this.spinner.stop();
+
+    const r = result.result as Record<string, unknown>;
+    const status = r.status as string;
+    if (status === 'attached_with_share_failure') {
+      this.warn(
+        (r.warning as string) ||
+          'AgentScript patched, but file sharing did not fully succeed. ' +
+            'The agent will return empty search results at runtime.',
+      );
+      const failures = (r.share_failures as Array<{ content_document_id: string; error: string }>) ?? [];
+      for (const f of failures) {
+        this.log(`  - ${f.content_document_id}: ${f.error}`);
+      }
+      for (const k of ['fatal_error', 'user_resolution_error', 'permset_error']) {
+        if (r[k]) this.log(`  ${k}: ${r[k] as string}`);
+      }
+      this.error('Attach completed with errors. See warnings above.', { exit: 1 });
+    }
+
     this.logSuccess('Library attached to agent.');
     return result.result;
   }

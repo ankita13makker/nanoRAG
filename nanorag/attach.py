@@ -738,7 +738,20 @@ def _share_library_files_with_agent(
                     "agent": agent_developer_name,
                 },
             )
-            return False
+            return {
+                "shared": False,
+                "agent_user_id": None,
+                "agent_username": agent_username,
+                "shared_doc_count": 0,
+                "failed_doc_count": 0,
+                "failures": [],
+                "user_resolution_error": (
+                    f"Could not resolve a runtime user for agent "
+                    f"'{agent_developer_name}'. AgentScript declared "
+                    f"default_agent_user={agent_username!r} but no matching "
+                    f"User row was found in the org."
+                ),
+            }
 
         # Collect active ContentDocumentIds
         active_doc_ids: set = set()
@@ -769,28 +782,45 @@ def _share_library_files_with_agent(
             )
 
         # Share each document with the agent user.
-        # Per-doc try/except so a stale ContentDocumentId (e.g. ENTITY_IS_DELETED
-        # from a deleted file lingering in the manifest) doesn't block sharing
-        # the rest of the library.
-        share_failures: list[tuple[str, str]] = []
+        # Per-doc try/except so one stale ContentDocumentId (e.g. ENTITY_IS_DELETED)
+        # doesn't block sharing the rest of the library. Per-doc failures are
+        # collected and surfaced in the response, not silently swallowed.
+        share_failures: list[Dict[str, str]] = []
         for doc_id in active_doc_ids:
             try:
                 share_content_document_with_user(
                     sf=sf, content_document_id=doc_id, user_id=target_user_id
                 )
             except Exception as exc:
-                share_failures.append((doc_id, str(exc)[:200]))
+                share_failures.append(
+                    {"content_document_id": doc_id, "error": str(exc)[:300]}
+                )
                 logger.warning(
-                    "attach: skipped sharing one doc",
+                    "attach: failed to share doc",
                     extra={"doc_id": doc_id, "error": str(exc)[:200]},
                 )
 
         # Assign NanoRag_User permission set
-        assign_permission_set_to_user(
-            sf=sf,
-            permission_set_name=PERMSET_NAME,
-            user_id=target_user_id,
-        )
+        try:
+            assign_permission_set_to_user(
+                sf=sf,
+                permission_set_name=PERMSET_NAME,
+                user_id=target_user_id,
+            )
+        except Exception as exc:
+            logger.warning(
+                "attach: permset assignment failed",
+                extra={"target_user_id": target_user_id, "error": str(exc)[:200]},
+            )
+            return {
+                "shared": False,
+                "agent_user_id": target_user_id,
+                "agent_username": agent_username,
+                "shared_doc_count": len(active_doc_ids) - len(share_failures),
+                "failed_doc_count": len(share_failures),
+                "failures": share_failures,
+                "permset_error": str(exc)[:300],
+            }
 
         logger.info(
             "attach: files shared with agent user",
@@ -798,10 +828,18 @@ def _share_library_files_with_agent(
                 "library_name": library_name,
                 "agent": agent_developer_name,
                 "target_user_id": target_user_id,
-                "shared_doc_count": len(active_doc_ids),
+                "shared_doc_count": len(active_doc_ids) - len(share_failures),
+                "failed_doc_count": len(share_failures),
             },
         )
-        return True
+        return {
+            "shared": len(share_failures) == 0,
+            "agent_user_id": target_user_id,
+            "agent_username": agent_username,
+            "shared_doc_count": len(active_doc_ids) - len(share_failures),
+            "failed_doc_count": len(share_failures),
+            "failures": share_failures,
+        }
 
     except Exception as exc:
         logger.warning(
@@ -812,7 +850,15 @@ def _share_library_files_with_agent(
                 "error": str(exc)[:300],
             },
         )
-        return False
+        return {
+            "shared": False,
+            "agent_user_id": None,
+            "agent_username": None,
+            "shared_doc_count": 0,
+            "failed_doc_count": 0,
+            "failures": [],
+            "fatal_error": str(exc)[:300],
+        }
 
 
 # ---------------------------------------------------------------------------
@@ -951,7 +997,7 @@ def attach_library(library_name: str, agent_developer_name: str) -> dict:
         return err
 
     # Share library files with agent runtime user
-    agent_user_shared = _share_library_files_with_agent(
+    share_result = _share_library_files_with_agent(
         sf,
         library_name=library_name,
         agent_developer_name=agent_developer_name,
@@ -964,6 +1010,12 @@ def attach_library(library_name: str, agent_developer_name: str) -> dict:
         manifest_mod.dump_manifest(manifest).encode("utf-8")
     ).hexdigest()
 
+    # If sharing failed, the AgentScript was patched but the agent runtime
+    # user can't read the library files — the agent will return empty
+    # search results at runtime. Mark the response as a partial success so
+    # the user knows action is required, and surface the failure details.
+    status = "attached" if share_result["shared"] else "attached_with_share_failure"
+
     logger.info(
         "attach_library: attached",
         extra={
@@ -973,11 +1025,12 @@ def attach_library(library_name: str, agent_developer_name: str) -> dict:
             "source_changed": source_changed,
             "source_origin": source_origin,
             "project_id": project_id,
+            "shared": share_result["shared"],
         },
     )
 
-    return {
-        "status": "attached",
+    response: Dict[str, Any] = {
+        "status": status,
         "library_name": library_name,
         "agent_developer_name": agent_developer_name,
         "topic_name": topic_name,
@@ -985,8 +1038,25 @@ def attach_library(library_name: str, agent_developer_name: str) -> dict:
         "source_origin": source_origin,
         "project_id": project_id,
         "manifest_hash": f"sha256:{manifest_hash}",
-        "agent_user_shared": agent_user_shared,
+        "agent_user_shared": share_result["shared"],
+        "agent_user_id": share_result["agent_user_id"],
+        "agent_username": share_result["agent_username"],
+        "shared_doc_count": share_result["shared_doc_count"],
+        "failed_doc_count": share_result["failed_doc_count"],
     }
+    # Surface failure details when sharing didn't fully succeed
+    if not share_result["shared"]:
+        response["share_failures"] = share_result["failures"]
+        for k in ("fatal_error", "user_resolution_error", "permset_error"):
+            if k in share_result:
+                response[k] = share_result[k]
+        response["warning"] = (
+            f"AgentScript was patched, but file sharing did not fully succeed. "
+            f"The agent runtime user may not be able to read the library files, "
+            f"which will cause the agent to return empty search results. "
+            f"Inspect 'share_failures' and re-run attach after fixing."
+        )
+    return response
 
 
 def detach_library(library_name: str, agent_developer_name: str) -> dict:
