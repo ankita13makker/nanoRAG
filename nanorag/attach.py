@@ -768,11 +768,22 @@ def _share_library_files_with_agent(
                 "attach: library file lookup failed: %s", str(exc)[:200]
             )
 
-        # Share each document with the agent user
+        # Share each document with the agent user.
+        # Per-doc try/except so a stale ContentDocumentId (e.g. ENTITY_IS_DELETED
+        # from a deleted file lingering in the manifest) doesn't block sharing
+        # the rest of the library.
+        share_failures: list[tuple[str, str]] = []
         for doc_id in active_doc_ids:
-            share_content_document_with_user(
-                sf=sf, content_document_id=doc_id, user_id=target_user_id
-            )
+            try:
+                share_content_document_with_user(
+                    sf=sf, content_document_id=doc_id, user_id=target_user_id
+                )
+            except Exception as exc:
+                share_failures.append((doc_id, str(exc)[:200]))
+                logger.warning(
+                    "attach: skipped sharing one doc",
+                    extra={"doc_id": doc_id, "error": str(exc)[:200]},
+                )
 
         # Assign NanoRag_User permission set
         assign_permission_set_to_user(
