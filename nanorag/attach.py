@@ -15,8 +15,6 @@ topic block into the agent's AgentScript source. Flow:
 6. Cache AgentScript in manifest and record the attachment.
 7. Share library files with the agent runtime user + assign permset.
 
-Simplified standalone version -- no RQ tasks, no LLM topic generation,
-no BYOO org routing.
 """
 
 from __future__ import annotations
