@@ -18,7 +18,7 @@ from typing import Any, Dict, Optional
 
 from ._foundation import (
     APEX_CLASS_META_XML,
-    FOUNDATION_SHA,
+    FOUNDATION_VERSION,
     NANORAG_BM25_SCORER_CLS,
     NANORAG_QUERY_SERVICE_CLS,
     NANORAG_QUERY_SERVICE_TEST_CLS,
@@ -125,7 +125,7 @@ def install_foundation() -> Dict[str, Any]:
     """
     sf = _get_sf_client()
 
-    logger.info("Building foundation zip (SHA: %s)", FOUNDATION_SHA)
+    logger.info("Building foundation zip (SHA: %s)", FOUNDATION_VERSION)
     zip_buf = _build_foundation_zip()
 
     logger.info("Deploying Apex classes + permission set...")
@@ -137,7 +137,7 @@ def install_foundation() -> Dict[str, Any]:
             "error": error,
             "apex_classes": APEX_CLASS_NAMES,
             "permset": PERMSET_NAME,
-            "foundation_sha": FOUNDATION_SHA,
+            "foundation_version": FOUNDATION_VERSION,
         }
 
     # Assign permset to agent runtime user
@@ -158,7 +158,7 @@ def install_foundation() -> Dict[str, Any]:
         "deploy_success": True,
         "apex_classes": APEX_CLASS_NAMES,
         "permset": PERMSET_NAME,
-        "foundation_sha": FOUNDATION_SHA,
+        "foundation_version": FOUNDATION_VERSION,
         "agent_user_id": agent_user_id,
         "permset_assigned": permset_assigned,
     }

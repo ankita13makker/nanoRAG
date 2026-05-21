@@ -180,7 +180,7 @@ def render_library_topic_afscript(
         f"                libraryName: string\n"
         f"            outputs:\n"
         f"                fileContent: string\n"
-        f"                sources: object\n"
+        f"                sources: list[object]\n"
         f'                    complex_data_type_name: "lightning__textType"\n'
         f"                reasoning: string\n"
     )

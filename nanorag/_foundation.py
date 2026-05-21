@@ -3,14 +3,12 @@
 
 """Embedded nanoRag Apex foundation + permset.
 
-Pinned from github.com/Authoring-Agent/nanorag at SHA 832ade777235ce6f275a46f446ca9501ab6ce14a.
-
-To update: re-fetch the 4 .cls files + the permset XML from the
-canonical repo and replace the literals below. Diff should be
-verifiable by ``git show <sha>:force-app/...`` against the strings.
+Bump FOUNDATION_VERSION whenever the Apex class strings or permset XML below
+change. The install command returns this so users can confirm which version
+of the runtime is deployed in their org.
 """
 
-FOUNDATION_SHA = "832ade777235ce6f275a46f446ca9501ab6ce14a"
+FOUNDATION_VERSION = "1.0.0"
 
 APEX_CLASS_META_XML = r"""<?xml version="1.0" encoding="UTF-8"?>
 <ApexClass xmlns="http://soap.sforce.com/2006/04/metadata">

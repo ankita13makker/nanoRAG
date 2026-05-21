@@ -37,7 +37,14 @@ Before build or attach, ALWAYS run `sf nanorag install --json` unless you have c
 
 If the user doesn't provide these, ASK before proceeding:
 1. **File paths** — which documents to give the agent access to
-2. **Agent developer name** — the API name of the agent (find via `sf agent list --json` or ask the user to check Setup > Agents)
+2. **Agent developer name** — the API name of the **NextGen agent** (Agentforce). Find it via the NextGen Authoring API:
+   ```bash
+   curl -s -H "Authorization: Bearer $TOKEN" \
+     "$INSTANCE_URL/services/data/v66.0/connect/nextgen-authoring/projects"
+   ```
+   Look for the `apiName` field (project IDs are prefixed `1bY`). Or ask the user to check Setup > Agents in the org.
+
+   **Do NOT** query `BotDefinition` via SOQL — that returns only legacy Bot agents, not NextGen authoring projects. nanoRag only attaches to NextGen agents.
 3. **Target org** — confirm `sf config get target-org --json` is set; if not, ask user to run `sf config set target-org <alias>`
 
 ### When to Override Topic Metadata
