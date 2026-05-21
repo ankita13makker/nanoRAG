@@ -62,10 +62,15 @@ def query_content_versions_by_title_prefix(
     """
     safe_prefix = _soql_escape(prefix)
     order = "ORDER BY CreatedDate DESC" if newest_first else "ORDER BY Title ASC"
+    # IsLatest=true alone is not enough — soft-deleted ContentVersions in
+    # the recycle bin still have IsLatest=true. Excluding via the parent
+    # ContentDocument's IsDeleted is what guarantees the CD is still live.
     soql = (
         "SELECT Id, Title, ContentDocumentId, ContentSize, LastModifiedDate "
         "FROM ContentVersion "
-        f"WHERE Title LIKE '{safe_prefix}%' AND IsLatest = true "
+        f"WHERE Title LIKE '{safe_prefix}%' "
+        "AND IsLatest = true "
+        "AND ContentDocument.IsDeleted = false "
         f"{order} "
         f"LIMIT {int(limit)}"
     )
